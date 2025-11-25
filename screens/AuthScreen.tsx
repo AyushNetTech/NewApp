@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
 } from 'react-native'
 import { supabase } from '../lib/supabase'
+import { useNavigation } from '@react-navigation/native'
 
 export default function AuthScreen() {
   const [email, setEmail] = useState('')
@@ -16,6 +17,7 @@ export default function AuthScreen() {
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
+  const navigation = useNavigation<any>()
 
   // -----------------------------
   // LOGIN
@@ -32,7 +34,6 @@ export default function AuthScreen() {
   // -----------------------------
   async function signUp() {
     setLoading(true)
-
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) {
       Alert.alert(error.message)
@@ -40,13 +41,9 @@ export default function AuthScreen() {
       return
     }
 
-    // Update metadata
     if (data.user) {
       const { error: metaError } = await supabase.auth.updateUser({
-        data: {
-          display_name: username,
-          phone: phone,
-        },
+        data: { display_name: username, phone }
       })
       if (metaError) Alert.alert(metaError.message)
     }
@@ -59,30 +56,29 @@ export default function AuthScreen() {
   }
 
   // -----------------------------
-  // FORGOT PASSWORD
+  // RESET PASSWORD
   // -----------------------------
-  // -----------------------------
-// FORGOT PASSWORD
-// -----------------------------
-async function resetPassword() {
+  async function resetPassword() {
   if (!email) {
-    Alert.alert("Enter your email first")
-    return
+    Alert.alert("Enter your email first");
+    return;
   }
 
-  setLoading(true)
+  setLoading(true);
+
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `https://mftvgiceccapzcgheaom.supabase.co` // replace <YOUR_PROJECT_REF> with your actual project ref
-  })
-  setLoading(false)
+    redirectTo: "myapp://reset-password",
+  });
+
+  setLoading(false);
 
   if (error) {
-    Alert.alert(error.message)
+    Alert.alert(error.message);
   } else {
     Alert.alert(
-      'Password Reset Email Sent',
-      'Check your inbox to reset your password. Open the link in your browser.'
-    )
+      "Password Reset Email Sent",
+      "Check your inbox and open the link using your device."
+    );
   }
 }
 
@@ -91,7 +87,6 @@ async function resetPassword() {
     <View style={styles.container}>
       <Text style={styles.title}>{isSignUp ? 'Create Account' : 'Welcome Back'}</Text>
 
-      {/* EMAIL */}
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -100,7 +95,6 @@ async function resetPassword() {
         onChangeText={setEmail}
       />
 
-      {/* PASSWORD */}
       <TextInput
         style={styles.input}
         placeholder="Password"
@@ -109,7 +103,6 @@ async function resetPassword() {
         onChangeText={setPassword}
       />
 
-      {/* SIGN-UP ONLY FIELDS */}
       {isSignUp && (
         <>
           <TextInput
@@ -128,7 +121,6 @@ async function resetPassword() {
         </>
       )}
 
-      {/* SUBMIT BUTTON */}
       <TouchableOpacity
         style={[styles.btn, { backgroundColor: '#2e86de' }]}
         onPress={isSignUp ? signUp : signIn}
@@ -137,14 +129,12 @@ async function resetPassword() {
         <Text style={styles.btnText}>{isSignUp ? 'Sign Up' : 'Sign In'}</Text>
       </TouchableOpacity>
 
-      {/* FORGOT PASSWORD */}
       {!isSignUp && (
         <TouchableOpacity onPress={resetPassword}>
           <Text style={styles.forgot}>Forgot Password?</Text>
         </TouchableOpacity>
       )}
 
-      {/* SWITCH MODE */}
       <TouchableOpacity onPress={() => setIsSignUp(!isSignUp)}>
         <Text style={styles.switch}>
           {isSignUp
