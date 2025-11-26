@@ -4,138 +4,139 @@ import { supabase } from '../lib/supabase'
 import { useNavigation, useRoute } from '@react-navigation/native'
 
 export default function ResetPasswordScreen() {
-  const navigation = useNavigation<any>()
-  const route = useRoute<any>()
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [accessToken, setAccessToken] = useState<string | null>(null)
-  const [ready, setReady] = useState(false)
+const navigation = useNavigation<any>()
+const route = useRoute<any>()
 
-  // universal parser: returns access_token from either query (?access_token=...) or hash (#access_token=...)
-  const parseTokenFromUrl = (url: string | null): string | null => {
-    if (!url) return null
-    try {
-      // try query params first
-      let token: string | null = new URL(url).searchParams.get('access_token')
-      // try hash (fragment) if not found
-      if (!token && url.includes('#')) {
-        const hash = url.split('#')[1] // everything after '#'
-        const hashParams = new URLSearchParams(hash)
-        token = hashParams.get('access_token')
-      }
-      return token
-    } catch (err) {
-      console.warn('parseTokenFromUrl error', err)
-      return null
-    }
-  }
+const [password, setPassword] = useState('')
+const [loading, setLoading] = useState(false)
+const [accessToken, setAccessToken] = useState<string | null>(null)
+const [refreshToken, setRefreshToken] = useState<string | null>(null)
+const [ready, setReady] = useState(false)
 
-  useEffect(() => {
-    // 1) If App.tsx navigated to this screen with route.params.url, pick that up first
-    const paramUrl: string | undefined = route.params?.url
-    Alert.alert('Reset screen opened', `route.params.url: ${paramUrl ?? 'none'}`)
+// Helper to parse access_token and refresh_token from URL
+const parseTokensFromUrl = (url: string | null): { accessToken: string | null, refreshToken: string | null } => {
+if (!url) return { accessToken: null, refreshToken: null }
 
-    if (paramUrl) {
-      const token = parseTokenFromUrl(paramUrl)
-      Alert.alert('Parsed token from route param', token ?? 'null')
-      if (token) {
-        setAccessToken(token)
-        setReady(true)
-        return
-      }
-    }
 
-    // 2) If we don't have token from params, check initial URL (cold start)
-    Linking.getInitialURL().then(url => {
-      Alert.alert('Reset screen getInitialURL', url ?? 'null')
-      const token = parseTokenFromUrl(url)
-      Alert.alert('Parsed token from initial URL', token ?? 'null')
-      if (token) {
-        setAccessToken(token)
-        setReady(true)
-        return
-      }
-    }).catch(err => {
-      Alert.alert('getInitialURL error', String(err))
-    })
+try {  
+  // Query param style ?access_token=...&refresh_token=...  
+  const queryParams = new URL(url).searchParams  
+  let access = queryParams.get('access_token')  
+  let refresh = queryParams.get('refresh_token')  
 
-    // 3) Also listen for event URLs while this screen is mounted (hot link)
-    const sub = Linking.addEventListener('url', (evt) => {
-      Alert.alert('Reset screen event URL', evt.url)
-      const token = parseTokenFromUrl(evt.url)
-      Alert.alert('Parsed token from event URL', token ?? 'null')
-      if (token) {
-        setAccessToken(token)
-        setReady(true)
-      }
-    })
+  // Hash style #access_token=...&refresh_token=...  
+  if ((!access || !refresh) && url.includes('#')) {  
+    const hash = url.split('#')[1]  
+    const hashParams = new URLSearchParams(hash)  
+    access = access || hashParams.get('access_token')  
+    refresh = refresh || hashParams.get('refresh_token')  
+  }  
 
-    return () => sub.remove()
-  }, [route.params])
+  return { accessToken: access, refreshToken: refresh }  
+} catch (err) {  
+  Alert.alert('parseTokensFromUrl error', String(err))  
+  return { accessToken: null, refreshToken: null }  
+} 
 
-  const updatePassword = async () => {
-    if (!password) {
-      Alert.alert('Error', 'Enter a new password')
-      return
-    }
-    if (!accessToken) {
-      Alert.alert('Error', 'No reset token found in URL')
-      return
-    }
 
-    setLoading(true)
+}
 
-    Alert.alert('Updating password', `Using token: ${accessToken}`)
+useEffect(() => {
+const handleUrl = (url: string | null) => {
+Alert.alert('Handling URL', url ?? 'null')
+const { accessToken, refreshToken } = parseTokensFromUrl(url)
+Alert.alert('Parsed Tokens', `access: ${accessToken ?? 'null'}\nrefresh: ${refreshToken ?? 'null'}`)
+if (accessToken && refreshToken) {
+setAccessToken(accessToken)
+setRefreshToken(refreshToken)
+setReady(true)
+}
+}
 
-    // 1. Set the session
-    const { error: sessionError } = await supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: '',
-    })
 
-    if (sessionError) {
-      Alert.alert('Set session error', sessionError.message)
-      setLoading(false)
-      return
-    }
+// 1️⃣ Check route param first  
+const paramUrl: string | undefined = route.params?.url  
+if (paramUrl) {  
+  Alert.alert('URL from route.params', paramUrl)  
+  handleUrl(paramUrl)  
+  return  
+}  
 
-    // 2. Update password
-    const { error } = await supabase.auth.updateUser({ password })
-    setLoading(false)
+// 2️⃣ Check initial URL  
+Linking.getInitialURL().then(url => {  
+  Alert.alert('Initial URL', url ?? 'null')  
+  handleUrl(url)  
+}).catch(err => {  
+  Alert.alert('getInitialURL error', String(err))  
+})  
 
-    if (error) {
-      Alert.alert('Update password error', error.message)
-    } else {
-      Alert.alert('Success', 'Password updated! Please login with your new password.')
-      navigation.navigate('Auth')
-    }
-  }
+// 3️⃣ Listen for URL events while mounted  
+const sub = Linking.addEventListener('url', event => handleUrl(event.url))  
+return () => sub.remove()  
 
-  // wait until a real token is present
-  if (!ready) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.waitingText}>Waiting for password reset link...</Text>
-      </View>
-    )
-  }
 
-  return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="New Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <Button title={loading ? 'Updating...' : 'Update Password'} onPress={updatePassword} disabled={loading} />
-    </View>
-  )
+}, [route.params])
+
+const updatePassword = async () => {
+if (!password) {
+Alert.alert('Error', 'Enter a new password')
+return
+}
+if (!accessToken || !refreshToken) {
+Alert.alert('Error', 'Missing access or refresh token')
+return
+}
+
+
+setLoading(true)  
+Alert.alert('Step 1', `Setting session with tokens:\naccess: ${accessToken}\nrefresh: ${refreshToken}`)  
+
+// 1️⃣ Set session with both access and refresh tokens  
+const { error: sessionError } = await supabase.auth.setSession({  
+  access_token: accessToken,  
+  refresh_token: refreshToken,  
+})  
+
+if (sessionError) {  
+  Alert.alert('Set session error', sessionError.message)  
+  setLoading(false)  
+  return  
+}  
+
+Alert.alert('Step 2', 'Session set successfully')  
+
+// 2️⃣ Update password  
+const { error: updateError } = await supabase.auth.updateUser({ password })  
+setLoading(false)  
+
+if (updateError) {  
+  Alert.alert('Update password error', updateError.message)  
+} else {  
+  Alert.alert('Success', 'Password updated! Please login with your new password.')  
+  navigation.navigate('Auth')  
+}  
+
+
+}
+
+if (!ready) {
+return ( <View style={styles.container}> <Text style={styles.waitingText}>Waiting for password reset link...</Text> </View>
+)
+}
+
+return ( <View style={styles.container}> <TextInput  
+     style={styles.input}  
+     placeholder="New Password"  
+     secureTextEntry  
+     value={password}  
+     onChangeText={setPassword}  
+   />
+<Button title={loading ? 'Updating...' : 'Update Password'} onPress={updatePassword} disabled={loading} /> </View>
+)
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 12, marginBottom: 12, borderRadius: 6 },
-  waitingText: { textAlign: 'center', fontSize: 16, color: '#555' },
+container: { flex: 1, justifyContent: 'center', padding: 20 },
+input: { borderWidth: 1, borderColor: '#ccc', padding: 12, marginBottom: 12, borderRadius: 6 },
+waitingText: { textAlign: 'center', fontSize: 16, color: '#555' },
 })
