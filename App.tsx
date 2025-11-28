@@ -64,11 +64,21 @@ export default function App() {
 
     const subscription = Linking.addEventListener('url', handleDeepLink)
 
+    
     Linking.getInitialURL().then((url) => {
-      if (url && navigationRef.isReady()) {
-        navigationRef.navigate('ResetPassword', { url })
-      }
-    })
+  if (!url || !navigationRef.isReady()) return;
+
+  if (url.startsWith("myapp://reset-password")) {
+    navigationRef.navigate("ResetPassword", { url });
+  }
+
+  if (url.startsWith("myapp://profile-setup")) {
+    navigationRef.navigate("ProfileSetup");
+  }
+});
+
+
+    
 
     return () => subscription.remove()
   }, [])

@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import { View, TextInput, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
-
-import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
-  Auth: undefined
-  Home: undefined
-  ResetPassword: { url?: string } | undefined
-}
+  Auth: undefined;
+  Home: undefined;
+  ResetPassword: { url?: string } | undefined;
+  ProfileSetup: undefined;
+};
 
-type AuthScreenNavigationProp = NativeStackNavigationProp<
+type ProfileNavProp = NativeStackNavigationProp<
   RootStackParamList,
-  'Auth'
->
+  "ProfileSetup"
+>;
 
-export default function AuthScreen({ navigation }: { navigation: AuthScreenNavigationProp }) {
+export default function ProfileSetupScreen({ navigation }: { navigation: ProfileNavProp })
+
+{
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
