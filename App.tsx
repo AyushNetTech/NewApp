@@ -39,14 +39,14 @@ export default function App() {
   useEffect(() => {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      Alert.alert("Initial Session", session ? "Found" : "NULL");
+     
       setSession(session)
       setLoading(false)
     }
     init()
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-       Alert.alert("Auth Change", `Event: ${_event}\nSession: ${session ? "YES" : "NO"}`);
+       
       setSession(session)
     })
     return () => listener.subscription.unsubscribe()
@@ -114,7 +114,6 @@ export default function App() {
         .maybeSingle()
 
       if (!profile && navigationRef.isReady()) {
-        Alert.alert("Profile Missing", "Redirecting to Profile Setup");
 
         navigationRef.reset({
           index: 0,

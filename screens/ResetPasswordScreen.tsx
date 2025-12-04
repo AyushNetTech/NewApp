@@ -31,23 +31,23 @@ export default function ResetPasswordScreen() {
         refresh = refresh || hashParams.get('refresh_token')
       }
 
-      Alert.alert('DEBUG', `Parsed tokens\naccess: ${access}\nrefresh: ${refresh}`)
+      
       return { accessToken: access, refreshToken: refresh }
     } catch (err: any) {
-      Alert.alert('ERROR', 'Failed to parse URL: ' + err.message)
+      
       return { accessToken: null, refreshToken: null }
     }
   }
 
   useEffect(() => {
     const handleUrl = (url: string | null) => {
-      Alert.alert('DEBUG', 'handleUrl called with: ' + url)
+      
       const { accessToken, refreshToken } = parseTokensFromUrl(url)
       if (accessToken && refreshToken) {
         setAccessToken(accessToken)
         setRefreshToken(refreshToken)
         setReady(true)
-        Alert.alert('DEBUG', 'Tokens set and ready')
+        
       }
     }
 
@@ -69,7 +69,7 @@ export default function ResetPasswordScreen() {
     if (!accessToken || !refreshToken) return Alert.alert('Error', 'Missing access or refresh token')
 
     setLoading(true)
-    Alert.alert('DEBUG', 'Calling setSession')
+    
 
     const { error: sessionError } = await supabase.auth.setSession({
       access_token: accessToken,
@@ -81,14 +81,14 @@ export default function ResetPasswordScreen() {
       return Alert.alert('Error', sessionError.message)
     }
 
-    Alert.alert('DEBUG', 'Session set, updating user password')
+   
 
     const { error: updateError } = await supabase.auth.updateUser({ password })
     setLoading(false)
 
     if (updateError) return Alert.alert('Error', updateError.message)
 
-    Alert.alert('DEBUG', 'Password updated, navigating to Home')
+    
 
     navigation.reset({
       index: 0,

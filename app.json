@@ -7,19 +7,15 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-
     "scheme": "myapp",
-
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-
     "ios": {
       "supportsTablet": true
     },
-
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -28,26 +24,29 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.ayushupasetech.myapp",
-
       "intentFilters": [
         {
           "action": "VIEW",
           "data": [
-            { "scheme": "myapp" }
+            {
+              "scheme": "myapp"
+            }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
-
     "web": {
       "favicon": "./assets/favicon.png"
     },
-
     "extra": {
       "eas": {
-        "projectId": "f81335df-f028-4520-b328-624e4addb265"
+        "projectId": "9f314cc1-68c6-4402-a7df-36042e8b7762"
       }
-    }
+    },
+    "owner": "ayushupase369.2"
   }
 }
